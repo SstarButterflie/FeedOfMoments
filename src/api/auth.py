@@ -18,6 +18,13 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
     
+    existing_username = db.query(User).filter(User.username == user_data.username).first()
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already taken"
+        )
+    
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
         email=user_data.email,
@@ -34,7 +41,7 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    user = db.query(User).filter(User.email == form_data.username).first()
+    user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
